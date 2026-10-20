@@ -1,0 +1,230 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'harishpatelh450@gmail.com') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN')
+      );
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             data.role in ['ADMIN', 'STAFF', 'CUSTOMER'];
+    }
+
+    function isValidCustomer(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 30 &&
+             data.siteAddress is string && data.siteAddress.size() > 0 && data.siteAddress.size() <= 300 &&
+             (!('city' in data) || (data.city is string && data.city.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidMeasurement(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.unit in ['RFT', 'SQFT', 'INCH', 'MM', 'METRE'] &&
+             (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 30)) &&
+             (!('siteAddress' in data) || (data.siteAddress is string && data.siteAddress.size() <= 300)) &&
+             (!('length' in data) || (data.length is number)) &&
+             (!('width' in data) || (data.width is number)) &&
+             (!('height' in data) || (data.height is number)) &&
+             (!('quantity' in data) || (data.quantity is number)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('sitePhotoUrl' in data) || (data.sitePhotoUrl is string && data.sitePhotoUrl.size() <= 1000));
+    }
+
+    function isValidQuotation(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.quotationNumber is string && data.quotationNumber.size() > 0 && data.quotationNumber.size() <= 50 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.totalAmount is number &&
+             (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 30)) &&
+             (!('siteAddress' in data) || (data.siteAddress is string && data.siteAddress.size() <= 300)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             (!('subtotal' in data) || (data.subtotal is number)) &&
+             (!('discountAmount' in data) || (data.discountAmount is number)) &&
+             (!('taxPercent' in data) || (data.taxPercent is number)) &&
+             (!('taxAmount' in data) || (data.taxAmount is number)) &&
+             (!('advanceAmount' in data) || (data.advanceAmount is number)) &&
+             (!('balanceAmount' in data) || (data.balanceAmount is number)) &&
+             (!('terms' in data) || (data.terms is string && data.terms.size() <= 2000)) &&
+             (!('status' in data) || (data.status in ['DRAFT', 'SENT', 'ACCEPTED', 'CONVERTED_INVOICE', 'CANCELLED'])) &&
+             (!('isInvoice' in data) || (data.isInvoice is bool));
+    }
+
+    function isValidOrder(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() <= 50 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.status in ['NEW', 'MEASUREMENT', 'ESTIMATE_SENT', 'APPROVED', 'WIP', 'INSTALLATION', 'COMPLETED', 'CANCELLED'] &&
+             (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 30)) &&
+             (!('siteAddress' in data) || (data.siteAddress is string && data.siteAddress.size() <= 300)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             (!('totalAmount' in data) || (data.totalAmount is number)) &&
+             (!('advancePaid' in data) || (data.advancePaid is number)) &&
+             (!('remainingBalance' in data) || (data.remainingBalance is number)) &&
+             (!('assignedStaff' in data) || (data.assignedStaff is string && data.assignedStaff.size() <= 100)) &&
+             (!('targetCompletionDate' in data) || (data.targetCompletionDate is string && data.targetCompletionDate.size() <= 50));
+    }
+
+    function isValidPayment(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.amount is number &&
+             data.paymentMode in ['CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE'] &&
+             (!('orderNumber' in data) || (data.orderNumber is string && data.orderNumber.size() <= 50)) &&
+             (!('transactionRef' in data) || (data.transactionRef is string && data.transactionRef.size() <= 100)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    function isValidCatalogueItem(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.baseRate is number &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             (!('materialSpecs' in data) || (data.materialSpecs is string && data.materialSpecs.size() <= 500)) &&
+             (!('dimensions' in data) || (data.dimensions is string && data.dimensions.size() <= 200)) &&
+             (!('unit' in data) || (data.unit is string && data.unit.size() <= 50)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000)) &&
+             (!('featured' in data) || (data.featured is bool));
+    }
+
+    // User profile collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Customers collection
+    match /customers/{customerId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidCustomer(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidCustomer(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Site measurements
+    match /measurements/{measurementId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidMeasurement(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidMeasurement(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Quotations and Estimates
+    match /quotations/{quotationId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidQuotation(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidQuotation(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidOrder(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidOrder(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidPayment(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidPayment(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Catalogue items (Readable by all authenticated users to browse designs and products)
+    match /catalogue_items/{itemId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidCatalogueItem(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidCatalogueItem(incoming());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+  }
+}

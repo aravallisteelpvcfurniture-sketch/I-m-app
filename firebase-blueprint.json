@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "user_profiles": {
+      "title": "UserProfile",
+      "description": "User profile with role assignment for Admin, Staff, or Customer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "email", "role", "createdAt"]
+    },
+    "customers": {
+      "title": "Customer",
+      "description": "Customer contact and site information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "siteAddress": { "type": "string" },
+        "city": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "siteAddress", "createdAt"]
+    },
+    "measurements": {
+      "title": "Measurement",
+      "description": "Site measurement record for steel, aluminium or PVC project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "siteAddress": { "type": "string" },
+        "category": { "type": "string" },
+        "length": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["RFT", "SQFT", "INCH", "MM", "METRE"] },
+        "notes": { "type": "string" },
+        "sitePhotoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "customerName", "category", "unit", "createdAt"]
+    },
+    "quotations": {
+      "title": "Quotation",
+      "description": "Formal quotation or invoice with itemized pricing, taxes and balance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "quotationNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "siteAddress": { "type": "string" },
+        "category": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "taxPercent": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "advanceAmount": { "type": "number" },
+        "balanceAmount": { "type": "number" },
+        "terms": { "type": "string" },
+        "status": { "type": "string", "enum": ["DRAFT", "SENT", "ACCEPTED", "CONVERTED_INVOICE", "CANCELLED"] },
+        "isInvoice": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quotationNumber", "customerName", "totalAmount", "createdAt"]
+    },
+    "orders": {
+      "title": "Order",
+      "description": "Lifecycle order tracking from site measurement to completion",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "siteAddress": { "type": "string" },
+        "category": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "advancePaid": { "type": "number" },
+        "remainingBalance": { "type": "number" },
+        "status": { "type": "string", "enum": ["NEW", "MEASUREMENT", "ESTIMATE_SENT", "APPROVED", "WIP", "INSTALLATION", "COMPLETED", "CANCELLED"] },
+        "assignedStaff": { "type": "string" },
+        "targetCompletionDate": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "orderNumber", "customerName", "status", "createdAt"]
+    },
+    "payments": {
+      "title": "Payment",
+      "description": "Payment transaction receipt for order or invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMode": { "type": "string", "enum": ["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"] },
+        "transactionRef": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "customerName", "amount", "paymentMode", "createdAt"]
+    },
+    "catalogue_items": {
+      "title": "CatalogueItem",
+      "description": "Design and product showcase item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "materialSpecs": { "type": "string" },
+        "dimensions": { "type": "string" },
+        "baseRate": { "type": "number" },
+        "unit": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "category", "baseRate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user_profiles",
+      "description": "Stores user profile data with role-based access"
+    },
+    "/customers/{customerId}": {
+      "schema": "customers",
+      "description": "Customer address and CRM directory"
+    },
+    "/measurements/{measurementId}": {
+      "schema": "measurements",
+      "description": "Site measurement records"
+    },
+    "/quotations/{quotationId}": {
+      "schema": "quotations",
+      "description": "Estimates and Invoices"
+    },
+    "/orders/{orderId}": {
+      "schema": "orders",
+      "description": "Orders in various lifecycle stages"
+    },
+    "/payments/{paymentId}": {
+      "schema": "payments",
+      "description": "Payment ledger records"
+    },
+    "/catalogue_items/{itemId}": {
+      "schema": "catalogue_items",
+      "description": "Product and design portfolio items"
+    }
+  }
+}
