@@ -23,13 +23,64 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Setup Keystore, Environment & Google Services
+        run: |
+          # 1. Restore debug.keystore from base64 if present, or generate one
+          if [ -f debug.keystore.base64 ]; then
+            echo "Restoring debug.keystore from base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
+            echo "Generating fallback debug.keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # 2. Ensure google-services.json is present in app/
+          if [ ! -f app/google-services.json ]; then
+            echo "Creating fallback google-services.json for CI..."
+            cat << 'EOF' > app/google-services.json
+          {
+            "project_info": {
+              "project_number": "171461343612",
+              "project_id": "gen-lang-client-0415886588",
+              "storage_bucket": "gen-lang-client-0415886588.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:171461343612:android:700245340bafae930c0cf9",
+                  "android_client_info": {
+                    "package_name": "com.aravalli.steelpvcfurniture"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyALma0eK6KguGGDbE3x2koYYUCfWwbvJ3o"
+                  }
+                ],
+                "services": {}
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+          fi
+
+          # 3. Ensure .env exists with placeholder or secret
+          if [ ! -f .env ]; then
+            echo "Copying .env from .env.example..."
+            cp .env.example .env
+          fi
+
       - name: Grant execute permission for Gradle wrapper
         run: |
           if [ -f gradlew ]; then chmod +x gradlew; fi
 
       - name: Build Debug APK
+        env:
+          JAVA_OPTS: "-Djava.awt.headless=true"
         run: |
-          gradle :app:assembleDebug --stacktrace
+          gradle :app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4

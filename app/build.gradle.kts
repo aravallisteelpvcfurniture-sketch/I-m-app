@@ -1,5 +1,6 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 import java.time.Duration
+import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -7,6 +8,67 @@ plugins {
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
+}
+
+// Auto-restore or generate debug.keystore if missing in CI environments
+val rootKeystore = rootProject.file("debug.keystore")
+val base64Keystore = rootProject.file("debug.keystore.base64")
+if (!rootKeystore.exists()) {
+  if (base64Keystore.exists()) {
+    try {
+      val decoded = Base64.getMimeDecoder().decode(base64Keystore.readText().trim())
+      rootKeystore.writeBytes(decoded)
+    } catch (_: Exception) {}
+  }
+}
+if (!rootKeystore.exists()) {
+  try {
+    ProcessBuilder(
+      "keytool", "-genkey", "-v",
+      "-keystore", rootKeystore.absolutePath,
+      "-storepass", "android",
+      "-alias", "androiddebugkey",
+      "-keypass", "android",
+      "-keyalg", "RSA",
+      "-keysize", "2048",
+      "-validity", "10000",
+      "-dname", "CN=Android Debug,O=Android,C=US"
+    ).redirectErrorStream(true).start().waitFor()
+  } catch (_: Exception) {}
+}
+
+// Auto-generate fallback google-services.json if missing in CI environments
+val gsFile = project.file("google-services.json")
+if (!gsFile.exists()) {
+  gsFile.writeText(
+    """
+    {
+      "project_info": {
+        "project_number": "171461343612",
+        "project_id": "gen-lang-client-0415886588",
+        "storage_bucket": "gen-lang-client-0415886588.firebasestorage.app"
+      },
+      "client": [
+        {
+          "client_info": {
+            "mobilesdk_app_id": "1:171461343612:android:700245340bafae930c0cf9",
+            "android_client_info": {
+              "package_name": "com.aravalli.steelpvcfurniture"
+            }
+          },
+          "oauth_client": [],
+          "api_key": [
+            {
+              "current_key": "AIzaSyALma0eK6KguGGDbE3x2koYYUCfWwbvJ3o"
+            }
+          ],
+          "services": {}
+        }
+      ],
+      "configuration_version": "1"
+    }
+    """.trimIndent()
+  )
 }
 
 android {
