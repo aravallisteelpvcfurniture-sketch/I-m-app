@@ -1,9 +1,7 @@
 package com.example.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,47 +19,54 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Architecture
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.UserRole
 import com.example.ui.theme.CharcoalBorder
 import com.example.ui.theme.CharcoalCard
 import com.example.ui.theme.CharcoalDark
@@ -81,15 +86,22 @@ fun AuthScreen(
 ) {
   val context = LocalContext.current
   val uiState by viewModel.uiState.collectAsState()
-  val selectedRole by viewModel.selectedRole.collectAsState()
-  var showFirebaseGuide by remember { mutableStateOf(false) }
+
+  // 0: Login, 1: Sign Up
+  var selectedTab by remember { mutableIntStateOf(0) }
+
+  // Form input states
+  var emailOrPhone by remember { mutableStateOf("") }
+  var password by remember { mutableStateOf("") }
+  var fullName by remember { mutableStateOf("") }
+  var passwordVisible by remember { mutableStateOf(false) }
 
   Box(
     modifier = Modifier
       .fillMaxSize()
       .background(
         Brush.verticalGradient(
-          colors = listOf(CharcoalDark, CharcoalSurface, Color(0xFF0D0F12))
+          colors = listOf(CharcoalDark, CharcoalSurface, Color(0xFF0C0E12))
         )
       )
   ) {
@@ -97,30 +109,31 @@ fun AuthScreen(
       modifier = Modifier
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
-        .padding(20.dp),
+        .padding(horizontal = 24.dp, vertical = 20.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(30.dp))
 
-      // Brand Logo Crest
+      // 1. Brand Logo Crest
       Box(
         modifier = Modifier
-          .size(80.dp)
+          .size(86.dp)
           .clip(CircleShape)
           .background(
             Brush.linearGradient(
               listOf(MetallicGold, Color(0xFF997A15))
             )
           )
-          .border(2.dp, MetallicGoldLight, CircleShape),
+          .border(2.dp, MetallicGoldLight, CircleShape)
+          .testTag("logo_crest"),
         contentAlignment = Alignment.Center
       ) {
         Icon(
           imageVector = Icons.Default.Architecture,
           contentDescription = "Aravalli Logo",
           tint = CharcoalDark,
-          modifier = Modifier.size(48.dp)
+          modifier = Modifier.size(50.dp)
         )
       }
 
@@ -137,367 +150,454 @@ fun AuthScreen(
 
       Text(
         text = "STEEL & PVC FURNITURE",
-        style = MaterialTheme.typography.titleMedium.copy(
+        style = MaterialTheme.typography.titleSmall.copy(
           fontWeight = FontWeight.Bold,
           letterSpacing = 2.sp,
-          color = OffWhite
+          color = SteelSilver
         )
       )
 
-      Text(
-        text = "Stainless Steel Railing • Glass Balcony • Modular PVC Interiors",
-        style = MaterialTheme.typography.bodySmall.copy(
-          color = SteelSilver,
-          textAlign = TextAlign.Center
-        ),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-      )
+      Spacer(modifier = Modifier.height(28.dp))
 
-      Spacer(modifier = Modifier.height(20.dp))
-
-      // Role Selection Card
+      // 2. Main Auth Card with Login and Sign Up Tabs
       Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("auth_card"),
         colors = CardDefaults.cardColors(containerColor = CharcoalCard),
-        shape = RoundedCornerShape(16.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(MetallicGold.copy(alpha = 0.5f), Color.Transparent)))
-      ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-          Text(
-            text = "Select Login Role",
-            style = MaterialTheme.typography.labelMedium.copy(
-              color = MetallicGoldLight,
-              fontWeight = FontWeight.SemiBold
-            )
+        shape = RoundedCornerShape(20.dp),
+        border = CardDefaults.outlinedCardBorder().copy(
+          brush = Brush.verticalGradient(
+            listOf(MetallicGold.copy(alpha = 0.4f), CharcoalBorder)
           )
-          Spacer(modifier = Modifier.height(8.dp))
+        )
+      ) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          // Tabs: Login / Sign Up
+          TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = Color.Transparent,
+            contentColor = MetallicGold,
+            indicator = { tabPositions ->
+              TabRowDefaults.SecondaryIndicator(
+                modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                color = MetallicGold,
+                height = 3.dp
+              )
+            },
+            divider = {
+              HorizontalDivider(color = CharcoalBorder)
+            }
+          ) {
+            Tab(
+              selected = selectedTab == 0,
+              onClick = { selectedTab = 0 },
+              text = {
+                Text(
+                  text = "Login",
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
+                    color = if (selectedTab == 0) MetallicGold else SteelSilver
+                  )
+                )
+              },
+              modifier = Modifier.testTag("auth_tab_login")
+            )
+            Tab(
+              selected = selectedTab == 1,
+              onClick = { selectedTab = 1 },
+              text = {
+                Text(
+                  text = "Sign Up",
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                    color = if (selectedTab == 1) MetallicGold else SteelSilver
+                  )
+                )
+              },
+              modifier = Modifier.testTag("auth_tab_signup")
+            )
+          }
+
+          Spacer(modifier = Modifier.height(20.dp))
+
+          if (selectedTab == 0) {
+            // LOGIN FORM
+            OutlinedTextField(
+              value = emailOrPhone,
+              onValueChange = { emailOrPhone = it },
+              label = { Text("Email or Phone") },
+              singleLine = true,
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("login_email_input"),
+              shape = RoundedCornerShape(12.dp),
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetallicGold,
+                unfocusedBorderColor = CharcoalBorder,
+                focusedLabelColor = MetallicGoldLight,
+                unfocusedLabelColor = SteelSilver,
+                focusedTextColor = OffWhite,
+                unfocusedTextColor = OffWhite,
+                cursorColor = MetallicGold
+              )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+              value = password,
+              onValueChange = { password = it },
+              label = { Text("Password") },
+              singleLine = true,
+              visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+              trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                  Icon(
+                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                    tint = SteelSilver
+                  )
+                }
+              },
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("login_password_input"),
+              shape = RoundedCornerShape(12.dp),
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetallicGold,
+                unfocusedBorderColor = CharcoalBorder,
+                focusedLabelColor = MetallicGoldLight,
+                unfocusedLabelColor = SteelSilver,
+                focusedTextColor = OffWhite,
+                unfocusedTextColor = OffWhite,
+                cursorColor = MetallicGold
+              )
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Login Button (triggers secure Google Authentication)
+            Button(
+              onClick = { viewModel.signInWithGoogle(context) },
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .testTag("login_button"),
+              colors = ButtonDefaults.buttonColors(
+                containerColor = MetallicGold,
+                contentColor = CharcoalDark
+              ),
+              shape = RoundedCornerShape(12.dp),
+              enabled = uiState !is AuthUiState.Loading
+            ) {
+              if (uiState is AuthUiState.Loading) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(24.dp),
+                  color = CharcoalDark,
+                  strokeWidth = 2.dp
+                )
+              } else {
+                Text(
+                  text = "Login",
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                  )
+                )
+              }
+            }
+          } else {
+            // SIGN UP FORM
+            OutlinedTextField(
+              value = fullName,
+              onValueChange = { fullName = it },
+              label = { Text("Full Name") },
+              singleLine = true,
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("signup_name_input"),
+              shape = RoundedCornerShape(12.dp),
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetallicGold,
+                unfocusedBorderColor = CharcoalBorder,
+                focusedLabelColor = MetallicGoldLight,
+                unfocusedLabelColor = SteelSilver,
+                focusedTextColor = OffWhite,
+                unfocusedTextColor = OffWhite,
+                cursorColor = MetallicGold
+              )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+              value = emailOrPhone,
+              onValueChange = { emailOrPhone = it },
+              label = { Text("Email or Phone") },
+              singleLine = true,
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("signup_email_input"),
+              shape = RoundedCornerShape(12.dp),
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetallicGold,
+                unfocusedBorderColor = CharcoalBorder,
+                focusedLabelColor = MetallicGoldLight,
+                unfocusedLabelColor = SteelSilver,
+                focusedTextColor = OffWhite,
+                unfocusedTextColor = OffWhite,
+                cursorColor = MetallicGold
+              )
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+              value = password,
+              onValueChange = { password = it },
+              label = { Text("Password") },
+              singleLine = true,
+              visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+              trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                  Icon(
+                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                    tint = SteelSilver
+                  )
+                }
+              },
+              modifier = Modifier
+                .fillMaxWidth()
+                .testTag("signup_password_input"),
+              shape = RoundedCornerShape(12.dp),
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MetallicGold,
+                unfocusedBorderColor = CharcoalBorder,
+                focusedLabelColor = MetallicGoldLight,
+                unfocusedLabelColor = SteelSilver,
+                focusedTextColor = OffWhite,
+                unfocusedTextColor = OffWhite,
+                cursorColor = MetallicGold
+              )
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Sign Up Button
+            Button(
+              onClick = { viewModel.signInWithGoogle(context) },
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .testTag("signup_button"),
+              colors = ButtonDefaults.buttonColors(
+                containerColor = MetallicGold,
+                contentColor = CharcoalDark
+              ),
+              shape = RoundedCornerShape(12.dp),
+              enabled = uiState !is AuthUiState.Loading
+            ) {
+              if (uiState is AuthUiState.Loading) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(24.dp),
+                  color = CharcoalDark,
+                  strokeWidth = 2.dp
+                )
+              } else {
+                Text(
+                  text = "Create Account",
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                  )
+                )
+              }
+            }
+          }
+
+          Spacer(modifier = Modifier.height(18.dp))
+
+          // "OR" Divider
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            UserRole.values().forEach { role ->
-              FilterChip(
-                selected = selectedRole == role,
-                onClick = { viewModel.setSelectedRole(role) },
-                label = { Text(role.name) },
-                colors = FilterChipDefaults.filterChipColors(
-                  selectedContainerColor = MetallicGold,
-                  selectedLabelColor = CharcoalDark,
-                  containerColor = CharcoalSurface,
-                  labelColor = SteelSilver
-                ),
-                modifier = Modifier.testTag("role_chip_${role.name.lowercase()}")
+            HorizontalDivider(
+              modifier = Modifier.weight(1f),
+              color = CharcoalBorder
+            )
+            Text(
+              text = "OR",
+              style = MaterialTheme.typography.labelSmall.copy(
+                color = SteelSilver,
+                fontWeight = FontWeight.SemiBold
+              ),
+              modifier = Modifier.padding(horizontal = 12.dp)
+            )
+            HorizontalDivider(
+              modifier = Modifier.weight(1f),
+              color = CharcoalBorder
+            )
+          }
+
+          Spacer(modifier = Modifier.height(18.dp))
+
+          // 3. Google Sign-In Button
+          Button(
+            onClick = { viewModel.signInWithGoogle(context) },
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(50.dp)
+              .testTag("google_sign_in_button"),
+            colors = ButtonDefaults.buttonColors(
+              containerColor = Color.White,
+              contentColor = Color(0xFF1F1F1F)
+            ),
+            shape = RoundedCornerShape(12.dp),
+            enabled = uiState !is AuthUiState.Loading
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Center
+            ) {
+              GoogleLogo(modifier = Modifier.size(20.dp))
+              Spacer(modifier = Modifier.width(12.dp))
+              Text(
+                text = if (selectedTab == 0) "Sign in with Google" else "Sign up with Google",
+                style = MaterialTheme.typography.titleSmall.copy(
+                  fontWeight = FontWeight.SemiBold,
+                  color = Color(0xFF1F1F1F)
+                )
               )
             }
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(18.dp))
-
-      // Primary Google Sign-In Button
-      Button(
-        onClick = { viewModel.signInWithGoogle(context) },
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(52.dp)
-          .testTag("google_sign_in_button"),
-        colors = ButtonDefaults.buttonColors(
-          containerColor = MetallicGold,
-          contentColor = CharcoalDark
-        ),
-        shape = RoundedCornerShape(14.dp),
-        enabled = uiState !is AuthUiState.Loading
-      ) {
-        if (uiState is AuthUiState.Loading) {
-          CircularProgressIndicator(
-            modifier = Modifier.size(24.dp),
-            color = CharcoalDark,
-            strokeWidth = 2.dp
-          )
-        } else {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-              imageVector = Icons.Default.Shield,
-              contentDescription = "Google Secure Auth",
-              tint = CharcoalDark,
-              modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-              text = "Sign in with Google",
-              style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold
-              )
-            )
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(12.dp))
-
-      // Offline Demo Mode Bypass Button
-      OutlinedButton(
-        onClick = onDemoMode,
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(48.dp)
-          .testTag("offline_demo_button"),
-        colors = ButtonDefaults.outlinedButtonColors(
-          contentColor = MetallicGoldLight
-        ),
-        border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.horizontalGradient(listOf(MetallicGoldLight, MetallicGold))),
-        shape = RoundedCornerShape(14.dp)
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Icon(
-            imageVector = Icons.Default.PlayArrow,
-            contentDescription = "Demo Access",
-            tint = MetallicGoldLight,
-            modifier = Modifier.size(20.dp)
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = "ऑफलाइन पार्टनर मोड (Explore Demo App)",
-            style = MaterialTheme.typography.bodyMedium.copy(
-              fontWeight = FontWeight.SemiBold
-            )
-          )
-        }
-      }
-
-      // Error Alert Box
+      // Error Message Display
       if (uiState is AuthUiState.Error) {
         val error = uiState as AuthUiState.Error
         Spacer(modifier = Modifier.height(14.dp))
         Card(
-          modifier = Modifier.fillMaxWidth(),
-          colors = CardDefaults.cardColors(containerColor = Color(0xFF2A1515)),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("auth_error_card"),
+          colors = CardDefaults.cardColors(containerColor = Color(0xFF2E1515)),
           shape = RoundedCornerShape(12.dp),
-          border = CardDefaults.outlinedCardBorder().copy(brush = Brush.linearGradient(listOf(Color(0xFFFF5252), Color(0xFF882020))))
+          border = CardDefaults.outlinedCardBorder().copy(
+            brush = Brush.horizontalGradient(listOf(Color(0xFFFF5252), Color(0xFF882020)))
+          )
         ) {
-          Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-              text = error.message,
-              color = Color(0xFFFF8A8A),
-              style = MaterialTheme.typography.bodySmall,
-              fontWeight = FontWeight.Medium
-            )
-            if (error.isConfigError || !showFirebaseGuide) {
-              Spacer(modifier = Modifier.height(8.dp))
-              Text(
-                text = "👉 Firebase SHA-1 सेटअप गाइड देखने के लिए नीचे बटन दबाएं",
-                color = MetallicGoldLight,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.clickable { showFirebaseGuide = true }
-              )
-            }
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(14.dp))
-
-      // Expandable Firebase SHA-1 & Setup Helper Card
-      Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = CharcoalCard.copy(alpha = 0.9f)),
-        shape = RoundedCornerShape(14.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(CharcoalBorder, MetallicGold.copy(alpha = 0.4f))))
-      ) {
-        Column(modifier = Modifier.padding(14.dp)) {
           Row(
             modifier = Modifier
               .fillMaxWidth()
-              .clickable { showFirebaseGuide = !showFirebaseGuide },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+              .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Icon(
-                imageVector = Icons.Default.Key,
-                contentDescription = null,
-                tint = MetallicGold,
-                modifier = Modifier.size(18.dp)
-              )
-              Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
               Text(
-                text = "Firebase Google Sign-In सेटअप व SHA-1",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                  color = MetallicGoldLight,
-                  fontWeight = FontWeight.Bold
-                )
+                text = error.message,
+                color = Color(0xFFFF8A8A),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium
               )
             }
-            Icon(
-              imageVector = Icons.Default.HelpOutline,
-              contentDescription = "Help",
-              tint = SteelSilver,
-              modifier = Modifier.size(18.dp)
-            )
-          }
-
-          if (showFirebaseGuide || (uiState is AuthUiState.Error && (uiState as AuthUiState.Error).isConfigError)) {
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = CharcoalBorder)
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-              text = "गूगल लॉगिन चालू करने के लिए 3 आसान स्टेप्स:",
-              style = MaterialTheme.typography.labelMedium.copy(color = OffWhite, fontWeight = FontWeight.Bold)
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-              text = "1. Firebase Console (console.firebase.google.com) में प्रोजेक्ट aravallisteel-60c94 खोलें।\n" +
-                     "2. Authentication -> Sign-in method में जाकर 'Google' को Enable करें।\n" +
-                     "3. Project Settings (⚙️) -> Your apps में जाकर नीचे दिया गया SHA-1 Fingerprint Add करें:",
-              style = MaterialTheme.typography.bodySmall.copy(color = SteelSilver, fontSize = 12.sp)
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // SHA-1 Box with 1-tap copy
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = CharcoalDark,
-              modifier = Modifier.fillMaxWidth()
+            IconButton(
+              onClick = { viewModel.clearError() },
+              modifier = Modifier.size(24.dp)
             ) {
-              Row(
-                modifier = Modifier
-                  .padding(10.dp)
-                  .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-              ) {
-                Column(modifier = Modifier.weight(1f)) {
-                  Text(
-                    text = "SHA-1 FINGERPRINT:",
-                    style = MaterialTheme.typography.labelSmall.copy(color = MetallicGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                  )
-                  Text(
-                    text = AuthViewModel.APP_SHA1,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                      color = OffWhite,
-                      fontFamily = FontFamily.Monospace,
-                      fontSize = 11.sp
-                    )
-                  )
-                }
-                OutlinedButton(
-                  onClick = {
-                    copyToClipboard(context, "SHA-1 Fingerprint", AuthViewModel.APP_SHA1)
-                  },
-                  shape = RoundedCornerShape(6.dp),
-                  contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                  modifier = Modifier.height(34.dp)
-                ) {
-                  Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(14.dp), tint = MetallicGold)
-                  Spacer(modifier = Modifier.width(4.dp))
-                  Text("Copy", fontSize = 11.sp, color = MetallicGold)
-                }
-              }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Package Name Box
-            Surface(
-              shape = RoundedCornerShape(8.dp),
-              color = CharcoalDark,
-              modifier = Modifier.fillMaxWidth()
-            ) {
-              Row(
-                modifier = Modifier
-                  .padding(10.dp)
-                  .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-              ) {
-                Column(modifier = Modifier.weight(1f)) {
-                  Text(
-                    text = "PACKAGE NAME:",
-                    style = MaterialTheme.typography.labelSmall.copy(color = MetallicGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                  )
-                  Text(
-                    text = AuthViewModel.APP_PACKAGE_NAME,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                      color = OffWhite,
-                      fontFamily = FontFamily.Monospace,
-                      fontSize = 11.sp
-                    )
-                  )
-                }
-                OutlinedButton(
-                  onClick = {
-                    copyToClipboard(context, "Package Name", AuthViewModel.APP_PACKAGE_NAME)
-                  },
-                  shape = RoundedCornerShape(6.dp),
-                  contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                  modifier = Modifier.height(34.dp)
-                ) {
-                  Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(14.dp), tint = MetallicGold)
-                  Spacer(modifier = Modifier.width(4.dp))
-                  Text("Copy", fontSize = 11.sp, color = MetallicGold)
-                }
-              }
+              Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Dismiss error",
+                tint = Color(0xFFFF8A8A),
+                modifier = Modifier.size(16.dp)
+              )
             }
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(20.dp))
+      Spacer(modifier = Modifier.height(16.dp))
 
-      // Features badge grid
-      Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+      // Minimal Demo mode fallback link
+      TextButton(
+        onClick = onDemoMode,
+        modifier = Modifier.testTag("offline_demo_button")
       ) {
-        FeatureItem("SS 304 / 202 Railing & Toughened Glass Balcony Estimates")
-        FeatureItem("Waterproof High-Density PVC Modular Kitchens & Wardrobes")
-        FeatureItem("GST Quotations & Tax Invoices with Instant WhatsApp Sharing")
-        FeatureItem("Site Measurement Tracker & Customer CRM Ledger")
+        Text(
+          text = "Explore Demo Mode (ऑफ़लाइन)",
+          style = MaterialTheme.typography.bodySmall.copy(
+            color = SteelSilver.copy(alpha = 0.7f),
+            fontWeight = FontWeight.Normal
+          )
+        )
       }
 
-      Spacer(modifier = Modifier.height(18.dp))
-
-      Text(
-        text = "Udaipur & Ahmedabad Highway Showroom • Contact: +91 94140 12345",
-        style = MaterialTheme.typography.labelSmall.copy(
-          color = SteelSilver.copy(alpha = 0.7f),
-          textAlign = TextAlign.Center
-        )
-      )
-      Spacer(modifier = Modifier.height(16.dp))
+      Spacer(modifier = Modifier.height(20.dp))
     }
   }
 }
 
-private fun copyToClipboard(context: Context, label: String, text: String) {
-  val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-  val clip = ClipData.newPlainText(label, text)
-  clipboard.setPrimaryClip(clip)
-  Toast.makeText(context, "$label copied to clipboard!", Toast.LENGTH_SHORT).show()
-}
-
+/**
+ * Clean Canvas-based Google "G" logo
+ */
 @Composable
-private fun FeatureItem(text: String) {
-  Row(
-    verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier.padding(horizontal = 4.dp)
-  ) {
-    Icon(
-      imageVector = Icons.Default.CheckCircle,
-      contentDescription = null,
-      tint = MetallicGold,
-      modifier = Modifier.size(16.dp)
+private fun GoogleLogo(modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val stroke = 3.dp.toPx()
+    val radius = size.minDimension / 2f
+    val center = Offset(size.width / 2f, size.height / 2f)
+
+    // Red arc (Top)
+    drawArc(
+      color = Color(0xFFEA4335),
+      startAngle = 200f,
+      sweepAngle = 120f,
+      useCenter = false,
+      style = Stroke(stroke, cap = StrokeCap.Round)
     )
-    Spacer(modifier = Modifier.width(8.dp))
-    Text(
-      text = text,
-      style = MaterialTheme.typography.bodySmall.copy(
-        color = OffWhite.copy(alpha = 0.85f)
-      )
+
+    // Yellow arc (Bottom-Left)
+    drawArc(
+      color = Color(0xFFFBBC05),
+      startAngle = 120f,
+      sweepAngle = 80f,
+      useCenter = false,
+      style = Stroke(stroke, cap = StrokeCap.Round)
+    )
+
+    // Green arc (Bottom-Right)
+    drawArc(
+      color = Color(0xFF34A853),
+      startAngle = 45f,
+      sweepAngle = 75f,
+      useCenter = false,
+      style = Stroke(stroke, cap = StrokeCap.Round)
+    )
+
+    // Blue arc (Top-Right)
+    drawArc(
+      color = Color(0xFF4285F4),
+      startAngle = 315f,
+      sweepAngle = 90f,
+      useCenter = false,
+      style = Stroke(stroke, cap = StrokeCap.Round)
+    )
+
+    // Blue horizontal bar
+    drawLine(
+      color = Color(0xFF4285F4),
+      start = Offset(center.x, center.y),
+      end = Offset(center.x + radius * 0.9f, center.y),
+      strokeWidth = stroke,
+      cap = StrokeCap.Round
     )
   }
 }
