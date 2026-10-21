@@ -48,6 +48,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -144,17 +145,21 @@ fun AppRoot() {
 
   val repository = remember { AravalliRepository(context) }
   val authViewModel = remember { AuthViewModel(repository) }
+  var isDemoMode by remember { mutableStateOf(false) }
 
-  if (currentUser == null) {
+  if (currentUser == null && !isDemoMode) {
     AuthScreen(
       viewModel = authViewModel,
+      onDemoMode = { isDemoMode = true },
       onAuthSuccess = {}
     )
   } else {
     val mainViewModel = remember { MainViewModel(repository) }
     MainAppScaffold(
       authViewModel = authViewModel,
-      mainViewModel = mainViewModel
+      mainViewModel = mainViewModel,
+      isDemoMode = isDemoMode && currentUser == null,
+      onExitDemoMode = { isDemoMode = false }
     )
   }
 }
@@ -163,7 +168,9 @@ fun AppRoot() {
 @Composable
 fun MainAppScaffold(
   authViewModel: AuthViewModel,
-  mainViewModel: MainViewModel
+  mainViewModel: MainViewModel,
+  isDemoMode: Boolean = false,
+  onExitDemoMode: () -> Unit = {}
 ) {
   var currentDestination by remember { mutableStateOf(ScreenDestination.HOME) }
   var showMoreSheet by remember { mutableStateOf(false) }
@@ -275,11 +282,41 @@ fun MainAppScaffold(
       }
     }
   ) { innerPadding ->
-    Box(
+    Column(
       modifier = Modifier
         .fillMaxSize()
         .padding(innerPadding)
     ) {
+      if (isDemoMode) {
+        Surface(
+          color = MetallicGold.copy(alpha = 0.18f),
+          modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onExitDemoMode() }
+        ) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Text(
+              text = "⚡ ऑफलाइन पार्टनर मोड (Offline Demo Mode)",
+              style = MaterialTheme.typography.labelSmall.copy(color = MetallicGoldLight, fontWeight = FontWeight.Bold)
+            )
+            Text(
+              text = "Google लॉगिन ➔",
+              style = MaterialTheme.typography.labelSmall.copy(color = MetallicGold, fontWeight = FontWeight.Bold)
+            )
+          }
+        }
+      }
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .weight(1f)
+      ) {
       when (currentDestination) {
         ScreenDestination.HOME -> HomeScreen(
           authViewModel = authViewModel,
@@ -354,6 +391,7 @@ fun MainAppScaffold(
       }
     }
   }
+}
 
   // More Navigation BottomSheet
   if (showMoreSheet) {

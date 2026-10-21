@@ -451,6 +451,48 @@
             <h4>Allow & Tap Install</h4>
             <p>If prompted with <em>"Install unknown apps"</em>, click <strong>Settings</strong> and toggle on <strong>"Allow from this source"</strong>, then tap <strong>Install</strong>. Done!</p>
           </div>
+    <section class="guide-section" style="border-color: rgba(212, 175, 55, 0.3); background: rgba(212, 175, 55, 0.05);">
+      <div class="guide-title" style="color: #f6d860;">
+        <span>🔑 Google Sign-In Setup & SHA-1 (लॉगिन समस्या समाधान)</span>
+      </div>
+      <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem;">
+        अगर ऐप में <strong>"Sign in with Google"</strong> दबाने पर लॉगिन नहीं हो रहा है, तो आप <strong>"ऑफलाइन पार्टनर मोड"</strong> से तुरंत ऐप के सभी फीचर्स चला सकते हैं। परमानेंट गूगल लॉगिन के लिए Firebase Console में यह SHA-1 जोड़ें:
+      </p>
+
+      <div style="background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem;">APPLICATION PACKAGE NAME:</div>
+        <code style="font-family: monospace; color: #60a5fa; font-size: 0.95rem; word-break: break-all;">com.aravalli.steelpvcfurniture</code>
+
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.75rem; margin-bottom: 0.25rem;">DEBUG KEYSTORE SHA-1 FINGERPRINT:</div>
+        <code style="font-family: monospace; color: #facc15; font-size: 0.95rem; word-break: break-all;">9D:63:99:B6:7D:6D:CE:6C:90:A5:46:D8:BE:3C:07:85:30:FC:3B:8E</code>
+
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.75rem; margin-bottom: 0.25rem;">SHA-256 FINGERPRINT:</div>
+        <code style="font-family: monospace; color: #34d399; font-size: 0.85rem; word-break: break-all;">D4:99:F2:B7:36:34:D5:8F:0C:B1:AE:3E:F2:B5:AD:09:3B:98:58:AF:23:4E:A9:44:4A:D0:72:61:3C:F6:2E:83</code>
+      </div>
+
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num" style="background: #eab308; color: #000;">1</div>
+          <div class="step-text">
+            <h4>Google Provider चालू करें</h4>
+            <p><a href="https://console.firebase.google.com" target="_blank" style="color: #60a5fa;">Firebase Console</a> में जाकर अपने प्रोजेक्ट <strong>aravallisteel-60c94</strong> में <em>Authentication ➔ Sign-in method</em> खोलें और <strong>Google</strong> को <strong>Enable</strong> करें।</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num" style="background: #eab308; color: #000;">2</div>
+          <div class="step-text">
+            <h4>SHA-1 Fingerprint जोड़ें</h4>
+            <p>Firebase Console में <em>Project Settings (⚙️) ➔ General ➔ Your apps</em> में जाएं। वहां ऊपर दिया गया <strong>SHA-1</strong> पेस्ट करके <strong>"Add fingerprint"</strong> सेव करें।</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num" style="background: #eab308; color: #000;">3</div>
+          <div class="step-text">
+            <h4>ऐप में 1-क्लिक लॉगिन करें</h4>
+            <p>अब अपने फोन में ऐप खोलें और <strong>"Sign in with Google"</strong> दबाएं। आपका लॉगिन तुरंत सफल हो जाएगा!</p>
+          </div>
         </div>
       </div>
     </section>
