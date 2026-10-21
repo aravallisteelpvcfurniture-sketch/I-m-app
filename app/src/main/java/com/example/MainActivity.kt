@@ -151,7 +151,7 @@ fun AppRoot() {
     AuthScreen(
       viewModel = authViewModel,
       onDemoMode = { isDemoMode = true },
-      onAuthSuccess = {}
+      onAuthSuccess = { isDemoMode = true }
     )
   } else {
     val mainViewModel = remember { MainViewModel(repository) }
