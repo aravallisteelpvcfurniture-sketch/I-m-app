@@ -44,22 +44,48 @@ if (!gsFile.exists()) {
     """
     {
       "project_info": {
-        "project_number": "171461343612",
-        "project_id": "gen-lang-client-0415886588",
-        "storage_bucket": "gen-lang-client-0415886588.firebasestorage.app"
+        "project_number": "584333364172",
+        "firebase_url": "https://aravallisteel-60c94-default-rtdb.firebaseio.com",
+        "project_id": "aravallisteel-60c94",
+        "storage_bucket": "aravallisteel-60c94.firebasestorage.app"
       },
       "client": [
         {
           "client_info": {
-            "mobilesdk_app_id": "1:171461343612:android:700245340bafae930c0cf9",
+            "mobilesdk_app_id": "1:584333364172:android:c5ce0f5f6eadebd12d2b69",
             "android_client_info": {
               "package_name": "com.aravalli.steelpvcfurniture"
             }
           },
-          "oauth_client": [],
+          "oauth_client": [
+            {
+              "client_id": "584333364172-7rdinqqt7cjnilj83qj7kka17t2fuj7b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ],
           "api_key": [
             {
-              "current_key": "AIzaSyALma0eK6KguGGDbE3x2koYYUCfWwbvJ3o"
+              "current_key": "AIzaSyAHTQE3sWrw53uAKjHCmxX_JOgvCjNWlDY"
+            }
+          ],
+          "services": {}
+        },
+        {
+          "client_info": {
+            "mobilesdk_app_id": "1:584333364172:android:c5ce0f5f6eadebd12d2b69",
+            "android_client_info": {
+              "package_name": "Com.aravalli.my"
+            }
+          },
+          "oauth_client": [
+            {
+              "client_id": "584333364172-7rdinqqt7cjnilj83qj7kka17t2fuj7b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ],
+          "api_key": [
+            {
+              "current_key": "AIzaSyAHTQE3sWrw53uAKjHCmxX_JOgvCjNWlDY"
             }
           ],
           "services": {}
