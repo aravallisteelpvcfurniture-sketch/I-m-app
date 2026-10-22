@@ -220,7 +220,7 @@ object PdfInvoiceGenerator {
       // Share via Android Native Share Sheet or direct WhatsApp
       val contentUri: Uri = FileProvider.getUriForFile(
         context,
-        "com.aravalli.steelpvcfurniture.fileprovider",
+        "${context.packageName}.fileprovider",
         file
       )
 

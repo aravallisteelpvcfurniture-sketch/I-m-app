@@ -94,6 +94,7 @@ import com.example.ui.theme.OffWhite
 import com.example.ui.theme.SteelSilver
 import com.example.ui.viewmodel.AuthViewModel
 import com.example.ui.viewmodel.MainViewModel
+import com.example.util.UserSessionManager
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -145,21 +146,24 @@ fun AppRoot() {
 
   val repository = remember { AravalliRepository(context) }
   val authViewModel = remember { AuthViewModel(repository) }
-  var isDemoMode by remember { mutableStateOf(false) }
+  var isLocalLoggedIn by remember { mutableStateOf(UserSessionManager.isLoggedIn(context)) }
 
-  if (currentUser == null && !isDemoMode) {
+  if (currentUser == null && !isLocalLoggedIn) {
     AuthScreen(
       viewModel = authViewModel,
-      onDemoMode = { isDemoMode = true },
-      onAuthSuccess = { isDemoMode = true }
+      onDemoMode = { isLocalLoggedIn = true },
+      onAuthSuccess = { isLocalLoggedIn = true }
     )
   } else {
     val mainViewModel = remember { MainViewModel(repository) }
     MainAppScaffold(
       authViewModel = authViewModel,
       mainViewModel = mainViewModel,
-      isDemoMode = isDemoMode && currentUser == null,
-      onExitDemoMode = { isDemoMode = false }
+      isDemoMode = isLocalLoggedIn && currentUser == null,
+      onExitDemoMode = {
+        UserSessionManager.clearSession(context)
+        isLocalLoggedIn = false
+      }
     )
   }
 }

@@ -104,7 +104,6 @@ fun AuthScreen(
   var fullName by remember { mutableStateOf("") }
   var passwordVisible by remember { mutableStateOf(false) }
   var validationError by remember { mutableStateOf<String?>(null) }
-  var showShaGuide by remember { mutableStateOf(false) }
 
   Box(
     modifier = Modifier
@@ -322,6 +321,13 @@ fun AuthScreen(
                 } else if (password.trim().isEmpty()) {
                   validationError = "कृपया Password दर्ज करें"
                 } else {
+                  val displayName = emailOrPhone.trim().substringBefore("@").replaceFirstChar { it.uppercase() }
+                  com.example.util.UserSessionManager.saveSession(
+                    context = context,
+                    name = displayName,
+                    emailOrPhone = emailOrPhone.trim(),
+                    role = "ADMIN"
+                  )
                   Toast.makeText(context, "लॉगिन सफल! Welcome back.", Toast.LENGTH_SHORT).show()
                   onAuthSuccess()
                 }
@@ -450,6 +456,12 @@ fun AuthScreen(
                 } else if (password.trim().isEmpty()) {
                   validationError = "कृपया Password दर्ज करें"
                 } else {
+                  com.example.util.UserSessionManager.saveSession(
+                    context = context,
+                    name = fullName.trim(),
+                    emailOrPhone = emailOrPhone.trim(),
+                    role = "ADMIN"
+                  )
                   Toast.makeText(context, "खाता सफलतापूर्वक बनाया गया! Welcome to Aravalli.", Toast.LENGTH_SHORT).show()
                   onAuthSuccess()
                 }
@@ -541,155 +553,42 @@ fun AuthScreen(
             }
           }
         }
-      }
 
-      // Error Message Display with 1-tap Bypass and SHA-1 Helper
-      if (uiState is AuthUiState.Error) {
-        val error = uiState as AuthUiState.Error
-        Spacer(modifier = Modifier.height(14.dp))
-        Card(
-          modifier = Modifier
-            .fillMaxWidth()
-            .testTag("auth_error_card"),
-          colors = CardDefaults.cardColors(containerColor = Color(0xFF2E1515)),
-          shape = RoundedCornerShape(14.dp),
-          border = CardDefaults.outlinedCardBorder().copy(
-            brush = Brush.horizontalGradient(listOf(Color(0xFFFF5252), Color(0xFF882020)))
-          )
-        ) {
-          Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              verticalAlignment = Alignment.CenterVertically
+        // Discreet error notice if an error occurs
+        if (uiState is AuthUiState.Error) {
+          val error = uiState as AuthUiState.Error
+          Spacer(modifier = Modifier.height(14.dp))
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(10.dp))
+              .background(Color(0xFF331414))
+              .border(1.dp, Color(0xFFFF5252).copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+              .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              text = error.message,
+              color = Color(0xFFFF8A8A),
+              style = MaterialTheme.typography.bodySmall,
+              modifier = Modifier.weight(1f)
+            )
+            IconButton(
+              onClick = { viewModel.clearError() },
+              modifier = Modifier.size(24.dp)
             ) {
-              Text(
-                text = error.message,
-                color = Color(0xFFFF8A8A),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
+              Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Dismiss error",
+                tint = Color(0xFFFF8A8A),
+                modifier = Modifier.size(16.dp)
               )
-              IconButton(
-                onClick = { viewModel.clearError() },
-                modifier = Modifier.size(24.dp)
-              ) {
-                Icon(
-                  imageVector = Icons.Default.Close,
-                  contentDescription = "Dismiss error",
-                  tint = Color(0xFFFF8A8A),
-                  modifier = Modifier.size(16.dp)
-                )
-              }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // 1-Tap button to enter app immediately without getting stuck
-            Button(
-              onClick = {
-                viewModel.clearError()
-                onAuthSuccess()
-              },
-              modifier = Modifier.fillMaxWidth(),
-              colors = ButtonDefaults.buttonColors(
-                containerColor = MetallicGold,
-                contentColor = CharcoalDark
-              ),
-              shape = RoundedCornerShape(8.dp)
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                  text = "बिना गूगल के अंदर जाएं (Continue to App)",
-                  style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
-              }
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Toggle SHA-1 Details
-            TextButton(
-              onClick = { showShaGuide = !showShaGuide },
-              modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Key, contentDescription = null, tint = MetallicGoldLight, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                  text = if (showShaGuide) "Firebase सेटअप बंद करें" else "Firebase SHA-1 व सेटअप देखें",
-                  color = MetallicGoldLight,
-                  style = MaterialTheme.typography.labelSmall
-                )
-              }
-            }
-
-            if (showShaGuide) {
-              Spacer(modifier = Modifier.height(8.dp))
-              Text(
-                text = "Google Sign-In चालू करने के लिए Firebase Console में यह SHA-1 Fingerprint Add करें:",
-                style = MaterialTheme.typography.labelSmall.copy(color = SteelSilver, fontSize = 11.sp)
-              )
-              Spacer(modifier = Modifier.height(6.dp))
-
-              Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = CharcoalDark,
-                modifier = Modifier.fillMaxWidth()
-              ) {
-                Row(
-                  modifier = Modifier.padding(8.dp),
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                  Text(
-                    text = AuthViewModel.APP_SHA1,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                      color = OffWhite,
-                      fontFamily = FontFamily.Monospace,
-                      fontSize = 10.sp
-                    ),
-                    modifier = Modifier.weight(1f)
-                  )
-                  OutlinedButton(
-                    onClick = {
-                      val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                      clipboard.setPrimaryClip(ClipData.newPlainText("SHA1", AuthViewModel.APP_SHA1))
-                      Toast.makeText(context, "SHA-1 कॉपी हो गया!", Toast.LENGTH_SHORT).show()
-                    },
-                    shape = RoundedCornerShape(4.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                    modifier = Modifier.height(28.dp)
-                  ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null, tint = MetallicGold, modifier = Modifier.size(12.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Copy", fontSize = 10.sp, color = MetallicGold)
-                  }
-                }
-              }
             }
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(14.dp))
-
-      // Direct entry link
-      TextButton(
-        onClick = onAuthSuccess,
-        modifier = Modifier.testTag("offline_demo_button")
-      ) {
-        Text(
-          text = "Explore App as Guest / Partner (सीधे अंदर जाएं)",
-          style = MaterialTheme.typography.bodySmall.copy(
-            color = SteelSilver.copy(alpha = 0.8f),
-            fontWeight = FontWeight.Medium
-          )
-        )
-      }
-
-      Spacer(modifier = Modifier.height(20.dp))
+      Spacer(modifier = Modifier.height(32.dp))
     }
   }
 }

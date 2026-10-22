@@ -38,7 +38,7 @@ abstract class FirestoreEmulatorTestBase {
       FirebaseApp.initializeApp(
         context,
         FirebaseOptions.Builder()
-          .setApplicationId("com.aravalli.steelpvcfurniture")
+          .setApplicationId("Com.aravalli.my")
           .setProjectId(PROJECT_ID)
           .setApiKey("fake-api-key-for-emulator")
           .build()

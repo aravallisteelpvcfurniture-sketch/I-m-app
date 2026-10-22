@@ -49,7 +49,7 @@ class AuthViewModel(
 ) : ViewModel() {
 
   companion object {
-    const val APP_PACKAGE_NAME = "com.aravalli.steelpvcfurniture"
+    const val APP_PACKAGE_NAME = "Com.aravalli.my"
     const val APP_SHA1 = "9D:63:99:B6:7D:6D:CE:6C:90:A5:46:D8:BE:3C:07:85:30:FC:3B:8E"
     const val APP_SHA256 = "D4:99:F2:B7:36:34:D5:8F:0C:B1:AE:3E:F2:B5:AD:09:3B:98:58:AF:23:4E:A9:44:4A:D0:72:61:3C:F6:2E:83"
     const val FIREBASE_PROJECT_ID = "aravallisteel-60c94"

@@ -21,8 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Architecture
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Campaign
@@ -228,6 +230,71 @@ fun HomeScreen(
             KpiStatItem("Active Orders", "$activeOrdersCount in progress", SteelChrome)
             KpiStatItem("Site Visits", "${measurements.size} logged", MetallicGoldLight)
           }
+        }
+      }
+    }
+
+    // Gemini AI Assistant Banner
+    item {
+      Card(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(16.dp))
+          .clickable { onNavigateToMarketing() }
+          .testTag("gemini_home_banner"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF14241B)),
+        border = CardDefaults.outlinedCardBorder().copy(
+          brush = Brush.horizontalGradient(listOf(Color(0xFF2E7D32), MetallicGold))
+        )
+      ) {
+        Row(
+          modifier = Modifier.padding(14.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Box(
+            modifier = Modifier
+              .size(42.dp)
+              .clip(CircleShape)
+              .background(Color(0xFF1B5E20)),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.AutoAwesome,
+              contentDescription = null,
+              tint = MetallicGold,
+              modifier = Modifier.size(24.dp)
+            )
+          }
+          Spacer(modifier = Modifier.width(12.dp))
+          Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                text = "Gemini AI Assistant",
+                color = Color(0xFF81C784),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall
+              )
+              Spacer(modifier = Modifier.width(6.dp))
+              Badge(
+                containerColor = MetallicGold,
+                contentColor = CharcoalDark
+              ) {
+                Text("Connected", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+              }
+            }
+            Text(
+              text = "AI Posters, WhatsApp Marketing Copy & Instant Estimations",
+              color = SteelSilver,
+              style = MaterialTheme.typography.bodySmall
+            )
+          }
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = "Open Gemini AI",
+            tint = MetallicGold,
+            modifier = Modifier.size(20.dp)
+          )
         }
       }
     }
